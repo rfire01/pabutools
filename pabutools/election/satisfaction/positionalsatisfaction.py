@@ -68,7 +68,7 @@ class PositionalSatisfaction(SatisfactionMeasure):
         scores = [self.positional_func(self.ballot, project) for project in projects]
         return self.aggregation_func(scores)
 
-    def sat_project(self, project: Project) -> Numeric:
+    def sat_project(self, project: Project, bundle: Collection[Project] = tuple()) -> Numeric:
         return self.sat([project])
 
 

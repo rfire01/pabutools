@@ -72,7 +72,7 @@ class FunctionalSatisfaction(SatisfactionMeasure):
     def sat(self, projects: Collection[Project]) -> Numeric:
         return self.func(self.instance, self.profile, self.ballot, projects)
 
-    def sat_project(self, project: Project) -> Numeric:
+    def sat_project(self, project: Project, bundle: Collection[Project] = tuple()) -> Numeric:
         return self.sat([project])
 
 

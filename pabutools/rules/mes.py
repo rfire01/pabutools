@@ -96,7 +96,7 @@ class MESVoter:
         """
         return self.multiplicity * self.budget
 
-    def budget_over_sat_project(self, proj):
+    def budget_over_sat_project(self, proj, bundle=tuple()):
         """
         Returns the budget divided by the satisfaction for a given project.
 
@@ -112,7 +112,7 @@ class MESVoter:
         """
         res = self.budget_over_sat_map.get((proj, self.budget), None)
         if res is None:
-            res = frac(self.budget, self.sat.sat_project(proj))
+            res = frac(self.budget, self.sat.sat_project(proj, bundle))
             self.budget_over_sat_map[(proj, self.budget)] = res
         return res
 
@@ -347,7 +347,7 @@ def mes_inner_algo(
                 )
             break
         project.supporter_indices.sort(
-            key=lambda i: voters[i].budget_over_sat_project(project)
+            key=lambda i: voters[i].budget_over_sat_project(project, current_alloc)
         )
         current_contribution = 0
         denominator = project.total_sat

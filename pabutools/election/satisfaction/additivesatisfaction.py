@@ -132,7 +132,7 @@ class AdditiveSatisfaction(SatisfactionMeasure):
     def sat(self, proj: Collection[Project]) -> Numeric:
         return sum(self.get_project_sat(p) for p in proj)
 
-    def sat_project(self, project: Project) -> Numeric:
+    def sat_project(self, project: Project, bundle: Collection[Project] = tuple()) -> Numeric:
         return self.get_project_sat(project)
 
 

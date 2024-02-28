@@ -97,7 +97,7 @@ class SatisfactionMeasure(ABC):
         """
 
     @abstractmethod
-    def sat_project(self, project: Project) -> Numeric:
+    def sat_project(self, project: Project, bundle: Collection[Project] = tuple()) -> Numeric:
         """
         Given the internal attributes of the satisfaction measure (ballot, profile, instance), returns the satisfaction
         for a single project.
