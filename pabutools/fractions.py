@@ -3,6 +3,8 @@ Module introducing all the functions used to handle fractions.
 """
 from __future__ import annotations
 
+from copy import copy
+
 from typing import TYPE_CHECKING
 
 from gmpy2 import mpq
@@ -54,7 +56,7 @@ def frac(*arg: Numeric) -> Numeric:
             )
     elif len(arg) == 2:
         if FRACTION == "gmpy2":
-            return mpq(arg[0], arg[1])
+            return mpq(copy(arg[0]), copy(arg[1]))
         elif FRACTION == "float":
             return arg[0] / arg[1]
         else:
