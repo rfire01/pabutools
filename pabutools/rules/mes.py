@@ -232,7 +232,7 @@ def naive_mes(
         mes_p = MESProject(p)
         total_sat = 0
         for i, v in enumerate(voters):
-            indiv_sat = v.sat.sat_project(p)
+            indiv_sat = v.sat.sat_project(p, projects)
             if indiv_sat > 0:
                 total_sat += v.total_sat_project(p)
                 mes_p.supporter_indices.append(i)
