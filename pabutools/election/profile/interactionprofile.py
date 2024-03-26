@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Collection, Iterable
 
-from pabutools.election.ballot.cardinalballot import AbstractCardinalBallot
+from pabutools.election.ballot.interactionballot import AbstractInteractionBallot
 from pabutools.election.ballot.interactionballot import InteractionBallot
 from pabutools.utils import Numeric
 
@@ -14,7 +14,7 @@ from pabutools.election.ballot import (
 from pabutools.election.profile.profile import Profile, MultiProfile, AbstractProfile
 from pabutools.election.instance import Instance, Project
 
-class AbstractInteractionProfile(AbstractProfile, ABC, Iterable[AbstractCardinalBallot]):
+class AbstractInteractionProfile(AbstractProfile, ABC, Iterable[AbstractInteractionBallot]):
     """
     Abstract class for interaction profiles. Stores the metadata and the methods specific to interaction profiles.
 

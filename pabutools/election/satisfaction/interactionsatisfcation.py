@@ -211,3 +211,93 @@ class Cardinality_Sat_With_Interaction(InteractionSatisfaction):
         InteractionSatisfaction.__init__(
             self, instance, profile, ballot, project_interaction_cardinality, outcome_interaction_cardinality
         )
+
+
+def project_additive_cardinality(
+        instance: Instance,
+        profile: AbstractInteractionProfile,
+        ballot: AbstractInteractionBallot,
+        project: Project,
+        bundle: Collection[Project],
+) -> Numeric:
+    """
+    Computes the single project cardinality satisfaction for ballots. It is equal to the assigned initial
+    marginal utility, ignoring which other projects were selected.
+
+    Parameters
+    ----------
+        instance : :py:class:`~pabutools.election.instance.Instance`
+            The instance.
+        profile : :py:class:`~pabutools.election.profile.profile.AbstractInteractionProfile`
+            The profile.
+        ballot : :py:class:`~pabutools.election.ballot.ballot.AbstractInteractionBallot`
+            The ballot.
+        project : :py:class:`~pabutools.election.instance.Project`
+            The selected project.
+        bundle : Collection
+            The funded projects.
+
+    Returns
+    -------
+        int
+            The cardinality satisfaction.
+    """
+    if project in ballot:
+        _, group_util = ballot[project]
+        project_marginal_utility = group_util[0]
+
+        return project_marginal_utility
+
+    return 0
+
+
+def outcome_additive_cardinality(
+        instance: Instance,
+        profile: AbstractInteractionProfile,
+        ballot: AbstractInteractionBallot,
+        bundle: Collection[Project],
+) -> Numeric:
+    """
+    Computes the total cardinality satisfaction for ballots. It is equal to the assigned initial
+    marginal utility, ignoring which other projects were selected.
+
+    Parameters
+    ----------
+        instance : :py:class:`~pabutools.election.instance.Instance`
+            The instance.
+        profile : :py:class:`~pabutools.election.profile.profile.AbstractInteractionProfile`
+            The profile.
+        ballot : :py:class:`~pabutools.election.ballot.ballot.AbstractInteractionBallot`
+            The ballot.
+        bundle : Collection
+            The funded projects.
+
+    Returns
+    -------
+        int
+            The cardinality satisfaction.
+    """
+    return sum(project_additive_cardinality(instance, profile, ballot, p, bundle) for p in bundle)
+
+
+class Cardinality_Sat_Ignoring_Interaction(InteractionSatisfaction):
+    """
+    The cardinality satisfaction for ballots. It is equal to the assigned initial marginal utility,
+    ignoring which other projects were selected.
+
+    Parameters
+    ----------
+        instance : :py:class:`~pabutools.election.instance.Instance`
+            The instance.
+        profile : :py:class:`~pabutools.election.profile.profile.AbstractInteractionProfile`
+            The profile.
+        ballot : :py:class:`~pabutools.election.ballot.ballot.AbstractInteractionBallot`
+            The ballot.
+    """
+
+    def __init__(
+            self, instance: Instance, profile: AbstractInteractionProfile, ballot: AbstractInteractionBallot
+    ):
+        InteractionSatisfaction.__init__(
+            self, instance, profile, ballot, project_additive_cardinality, outcome_additive_cardinality
+        )

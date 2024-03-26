@@ -6,6 +6,7 @@ from __future__ import annotations
 from copy import copy, deepcopy
 from collections.abc import Collection, Iterable
 
+from pabutools.election.satisfaction.interactionsatisfcation import Cardinality_Sat_With_Interaction
 from pabutools.rules.budgetallocation import BudgetAllocation
 from pabutools.utils import Numeric
 
@@ -68,7 +69,7 @@ class MESVoter:
         self.multiplicity: int = multiplicity
         self.budget_over_sat_map: dict[tuple[Project, Numeric], Numeric] = dict()
 
-    def total_sat_project(self, proj: Project) -> Numeric:
+    def total_sat_project(self, proj: Project, bundle: Collection[Project]=tuple()) -> Numeric:
         """
         Returns the total satisfaction of a given project. It is equal to the satisfaction for the project,
         multiplied by the multiplicity.
@@ -77,13 +78,15 @@ class MESVoter:
         ----------
             proj: :py:class:`~pabutools.election.instance.Project`
                 The project.
+            bundle : Collection
+                The funded projects.
 
         Returns
         -------
             Numeric
                 The total satisfaction.
         """
-        return self.multiplicity * self.sat.sat_project(proj)
+        return self.multiplicity * self.sat.sat_project(proj, bundle)
 
     def total_budget(self) -> Numeric:
         """
@@ -139,10 +142,10 @@ class MESProject(Project):
         self.initial_affordability = None
         self.affordability = None
 
-    def supporters_sat(self, supporter: MESVoter):
+    def supporters_sat(self, supporter: MESVoter, bundle: Collection[Project]=tuple()):
         if self.unique_sat_supporter:
             return self.unique_sat_supporter
-        return supporter.sat.sat_project(self)
+        return supporter.sat.sat_project(self, bundle)
 
     def __str__(self):
         return f"MESProject[{self.name}, {float(self.affordability)}]"
@@ -184,6 +187,31 @@ def affordability_poor_rich(voters: list[MESVoter], project: MESProject) -> Nume
             return affordability
         rich -= new_poor
         poor.update(new_poor)
+
+
+def update_affordability(projects, voters, bundle=tuple()):
+    """Update the affordability factor of the projects according to new utilities.
+
+    Parameters
+    ----------
+        projects: list[MESProject]
+            The list of the projects, formatted for MES.
+        voters: list[MESVoter]
+            The list of the voters, formatted for MES.
+        bundle: list[MESProject]
+            The projects that were chosen to be funded.
+    """
+    for p in projects:
+        total_sat = 0
+        for i, v in enumerate(voters):
+            indiv_sat = v.sat.sat_project(p, bundle)
+            if indiv_sat > 0:
+                total_sat += v.total_sat_project(p, bundle)
+
+        if total_sat > 0:
+            afford = frac(p.cost, total_sat)
+            p.affordability = afford
+            p.total_sat = total_sat
 
 
 def naive_mes(
@@ -285,6 +313,7 @@ def mes_inner_algo(
     current_alloc: list[Project],
     all_allocs: list[list[Project]],
     resoluteness: bool,
+    with_interactions: bool = False,
     verbose: bool = False,
 ) -> None:
     """
@@ -357,9 +386,9 @@ def mes_inner_algo(
             if verbose:
                 print(
                     f"\t\t\t {project.cost} - {current_contribution} / {denominator} = {afford_factor} * "
-                    f"{project.supporters_sat(supporter)} ?? {supporter.budget}"
+                    f"{project.supporters_sat(supporter, current_alloc)} ?? {supporter.budget}"
                 )
-            if afford_factor * project.supporters_sat(supporter) <= supporter.budget:
+            if afford_factor * project.supporters_sat(supporter, current_alloc) <= supporter.budget:
                 # found the best afford_factor for this project
                 project.affordability = afford_factor
                 if verbose:
@@ -377,7 +406,7 @@ def mes_inner_algo(
                     tied_projects.append(project)
                 break
             current_contribution += supporter.total_budget()
-            denominator -= supporter.multiplicity * project.supporters_sat(supporter)
+            denominator -= supporter.multiplicity * project.supporters_sat(supporter, current_alloc)
     if verbose:
         print(f"{tied_projects}")
     if not tied_projects:
@@ -405,14 +434,18 @@ def mes_inner_algo(
             new_projects.remove(selected_project)
             if verbose:
                 print(
-                    f"Price is {best_afford * selected_project.supporters_sat(selected_project.supporter_indices[0])}"
+                    f"Price is {best_afford * selected_project.supporters_sat(selected_project.supporter_indices[0], current_alloc[:-1])}"
                 )
             for i in selected_project.supporter_indices:
                 supporter = new_voters[i]
                 supporter.budget -= min(
                     supporter.budget,
-                    best_afford * selected_project.supporters_sat(supporter),
+                    best_afford * selected_project.supporters_sat(supporter, current_alloc[:-1]),
                 )
+
+            if with_interactions:
+                update_affordability(new_projects, new_voters, new_alloc)
+
             mes_inner_algo(
                 instance,
                 profile,
@@ -422,6 +455,7 @@ def mes_inner_algo(
                 new_alloc,
                 all_allocs,
                 resoluteness,
+                with_interactions=with_interactions,
                 verbose=verbose,
             )
 
@@ -473,6 +507,8 @@ def method_of_equal_shares_scheme(
             The selected projects if resolute (`resoluteness` = True), or the set of selected projects if irresolute
             (`resoluteness = False`).
     """
+    with_interactions = len(sat_profile) > 0 and isinstance(sat_profile[0], Cardinality_Sat_With_Interaction)
+
     if verbose:
         print(f"Initial budget per voter is: {initial_budget_per_voter}")
     voters = []
@@ -524,6 +560,7 @@ def method_of_equal_shares_scheme(
             copy(initial_budget_allocation),
             all_budget_allocations,
             resoluteness,
+            with_interactions,
             verbose,
         )
         if resoluteness:
