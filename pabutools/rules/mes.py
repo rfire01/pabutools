@@ -646,6 +646,8 @@ def method_of_equal_shares(
             The selected projects if resolute (`resoluteness` = True), or the set of selected projects if irresolute
             (`resoluteness = False`).
     """
+    if sat_class is Cardinality_Sat_With_Interaction and not resoluteness:
+        raise ValueError("Satisfaction with interactions currently supports only resolute aggregation")
     if tie_breaking is None:
         tie_breaking = lexico_tie_breaking
     if initial_budget_allocation is not None:
